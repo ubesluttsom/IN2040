@@ -97,7 +97,8 @@
 (define (take n elements)
   (cond ((null? elements) '())
         ((= n 0) '())
-        (else (cons (car elements) (take (- n 1) (cdr elements))))))
+        (else (cons (car elements)
+                    (take (- n 1) (cdr elements))))))
 
 (take 3 '(a b c d e f))
 (take 1 '(a b c d e f))
@@ -105,7 +106,6 @@
 (take 4 '())
 
 ; (b)
-
 
 (define (take n elements)
   (define (take-iter count taken rest)
@@ -120,3 +120,30 @@
 (take 1 '(a b c d e f))
 (take 4 '(a b))
 (take 4 '())
+
+; (c)
+
+(define (take-while pred elements)
+  (define (take-iter taken rest)
+    (cond ((null? rest) taken)
+          ((not (pred (car rest))) taken)
+          (else (take-iter (append taken (list (car rest))) ; Stygt. Fiks!
+                           (cdr rest)))))
+  (take-iter '() elements))
+
+(take-while even? '(2 34 42 75 88 103 250))
+(take-while odd? '(2 34 42 75 88 103 250))
+(take-while (lambda (x) (< x 100)) '(2 34 42 75 88 103 250))
+
+; (d)
+
+(define (map2 op list1 list2)
+  (cond ((null? list1) '())
+        ((null? list2) '())
+        (else (cons (op (car list1) (car list2))
+                    (map2 op (cdr list1) (cdr list2))))))
+(map2 + '(1 2 3 4) '(3 4 5))
+
+; (e)
+
+(map2 (lambda (x y) (/ (+ x y) 2)) '(1 2 3 4) '(3 4 5))
