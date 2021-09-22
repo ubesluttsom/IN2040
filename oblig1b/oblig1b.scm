@@ -107,12 +107,17 @@
 
 ; (b)
 
+; Syntes ikke denne ble så «vakker» akkurat --- spesielt innblandingen av `list`
+; og `append`, men jeg så ikke umiddelbart hvordan jeg skulle gjøre dette
+; enkelt med kun `cons`, `car` og `cdr` (jeg endte opp med «reverserte» lister,
+; type `(((() a) b) c)`).
+
 (define (take n elements)
   (define (take-iter count taken rest)
     (cond ((null? rest) taken)
           ((= count 0) taken)
           (else (take-iter (- count 1)
-                           (append taken (list (car rest))) ; Stygt. Fiks!
+                           (append taken (list (car rest)))
                            (cdr rest)))))
   (take-iter n '() elements))
 
@@ -127,7 +132,7 @@
   (define (take-iter taken rest)
     (cond ((null? rest) taken)
           ((not (pred (car rest))) taken)
-          (else (take-iter (append taken (list (car rest))) ; Stygt. Fiks!
+          (else (take-iter (append taken (list (car rest)))
                            (cdr rest)))))
   (take-iter '() elements))
 
