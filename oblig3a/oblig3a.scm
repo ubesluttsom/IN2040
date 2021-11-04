@@ -2,7 +2,7 @@
 
 ;; 1. PROSEDYRER FOR BEDRE PROSEDYRER
 
-;; (a) – (b) {{{
+;; (a), (b)
 
 (define mem
   (let ((unmemoized-procs (make-table)))
@@ -18,67 +18,103 @@
                 ((eq? action 'unmemoize)
                  (lookup proc unmemoized-procs))))))
 
-;; Test
-
-(fib 5)
+(display "--- 1 (a), (b) ---\n")
 (set! fib (mem 'memoize fib))
-(fib 5)
-(fib 5)
+(fib 3)
+;; computing fib of 3
+;; computing fib of 2
+;; computing fib of 1
+;; computing fib of 0
+;; →   2
+(fib 3)
+;; →   2
+(fib 2)
+;; →   1
+(fib 4)
+;; computing fib of 4
+;; →   3
 (set! fib (mem 'unmemoize fib))
-(fib 5)
-(test-proc 1 2 3)
+(fib 3)
+;; computing fib of 3
+;; computing fib of 2
+;; computing fib of 1
+;; computing fib of 0
+;; computing fib of 1
+;; →   2
+
 (set! test-proc (mem 'memoize test-proc))
-(test-proc 1 2 3)
-(test-proc 1 2 3)
+(test-proc)
+;; computing test-proc of ()
+;; →   0
+(test-proc)
+;; →   0
+(test-proc 40 41 42 43 44)
+;; computing test-proc of (40 41 42 43 44)
+;; computing test-proc of (41 42 43 44)
+;; computing test-proc of (42 43 44)
+;; computing test-proc of (43 44)
+;; computing test-proc of (44)
+;; →   10
+(test-proc 40 41 42 43 44)
+;; →   10
+(test-proc 42 43 44)
+;; →   5
 
-;; }}}
 
-;; (c) {{{
+;; (c)
 
-(display "? (define mem-fib (mem 'memoize fib))\n")
+(display "--- 1 (c) ---\n")
 (define mem-fib (mem 'memoize fib))
-(display "? (mem-fib 3)\n")
 (mem-fib 3)
-(display "? (mem-fib 3)\n")
+;; computing fib of 3
+;; computing fib of 2
+;; computing fib of 1
+;; computing fib of 0
+;; computing fib of 1
+;; →  2
 (mem-fib 3)
-(display "? (mem-fib 2)\n")
+;; →  2
 (mem-fib 2)
+;; computing fib of 2
+;; computing fib of 1
+;; computing fib of 0
+;; →  1
 
-;; I motsettning til hva jeg først trodde, forskjellen ligger *ikke* i at det
+;; I motsetning til hva jeg først trodde, forskjellen ligger *ikke* i at det
 ;; brukes `define` for å binde `mem-fib` prosedyren, og ikke `set!` som
 ;; tidligere. Forskjellen er heller (tror jeg) at vi lager en ny binding
 ;; `mem-fib`, i stedet for å endre på den gamle; da vil ikke `fib` bli
 ;; rekursivt omdefinert, og det gjøres kall på den «originale» `fib`
-;; prossedyren innad i den memoiserte prosedyrekroppen, og ikke på
-;; `memoized-proc` (som jeg har kallt den). Bruke
+;; prosedyren innad i den memoiserte prosedyrekroppen, og ikke på
+;; `memoized-proc` (som jeg har kalt den). Bruke
        (define fib (mem 'memoize fib))
        (fib 3)
        (fib 3)
        (fib 2)
 ;; vil fungere helt greit.
 
-;; }}}
 
-;; 2 STRØMMER
+;; 2. STRØMMER
 
-;; (a) {{{
+;; (a)
 
 (define (list-to-stream list)
   (if (null? list)
-    '()                                           ; Basistillfellet.
+    '()                                           ; Basistilfellet.
     (cons-stream (car list)                       ; Ellers, cons sammen strøm
-                 (list-to-stream (cdr list)))))   ; med rekkursjon
+                 (list-to-stream (cdr list)))))   ; med rekursjon
 
 (define (stream-to-list stream . n)
   (define (iter stream n)
     (if (or (= n 0) (stream-null? stream))
       '()                                           ; Basistilfeller.
       (cons (stream-car stream)                     ; Ellers, lag liste med å
-            (iter (stream-cdr stream) (- n 1)))))   ; rekkursivt conse bortover
+            (iter (stream-cdr stream) (- n 1)))))   ; rekursivt conse bortover
   (if (null? n)
       (iter stream -1)          ; Hvis kun `stream` argument, forkast teller,
       (iter stream (car n))))   ; ellers, tolk ekstra argument `n` som teller
 
+(display "--- 2 (a) ---\n")
 (list-to-stream '(1 2 3 4 5))
 ;; →  (1 . #<promise>)
 (stream-to-list (stream-interval 10 20))
@@ -86,13 +122,13 @@
 (show-stream nats 15)
 ;; →  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 ...
 
-;; }}}
 
-;; (b) {{{
+;; (b)
 
 (define (stream-take n stream)
   (list-to-stream (stream-to-list stream n)))   ; Modularitet <3
 
+(display "--- 2 (b) ---\n")
 (define foo (stream-take 10 nats))
 foo
 ;; →  (1 . #<promise>)
@@ -103,36 +139,33 @@ foo
 (show-stream (stream-take 15 nats) 10)
 ;; →  1 2 3 4 5 6 7 8 9 10 ...
 
-;; }}}
 
+;; (c)
 
-;; (c) {{{
-
-;; Altså, de ville jo blitt ganske meningsløst, siden `memq` ville itterert seg
-;; igjennom hele stømmen for hvert element i strømmen. Hvis du like vel må
+;; Altså, de ville jo blitt ganske meningsløst, siden `memq` ville iterert seg
+;; igjennom hele strømmen for hvert element i strømmen. Hvis du like vel må
 ;; evaluere hele strømmen for (nesten) hvert steg, hva er da poenget med å bruke
-;; en strøm?
-
-;; }}}
+;; en strøm? Dessuten ville det ikke fungere på uendelige strømmer.
 
 
-;; (d) {{{
+;; (d)
+
+;; Idéen er å heller sjekke «bakover» i strømmen; sjekk elementene i strømmen
+;; som allerede har blitt evaluert, og kun aksepter nye elementer som ikke
+;; evaluerer til noen av de tidligere.
 
 (define (remove-duplicates stream)
-  (define in-set?                             ; ←  Predikatet vi filterer etter
-    (let ((set-of-elements (make-table)))     ; ←  Mengde som husker elementene
-      (lambda (element)                       ; som et let-over-labda uttrykk.
-        (if (lookup element set-of-elements)  ; Om elementet finnes i mengden,
-          #f                                  ; er det et duplikat (filtrer),
-          (begin (insert! element '() set-of-elements) ; ellers, legg til
-                 element)))))                 ; og returner det (ikke filtrer).
   (if (stream-null? stream)
     the-empty-stream
-    (cons-stream (in-set? (stream-car stream))
+    (cons-stream (stream-car stream)
                  (remove-duplicates
-                   (stream-filter in-set? (stream-cdr stream))))))
+                   (stream-filter
+                       (lambda (element)
+                         (not (memq element (list (stream-car stream)))))
+                     (stream-cdr stream))))))
 
-;; Test
-(show-stream (remove-duplicates (list-to-stream '(1 52 7 3 2 2 78 7 9 10 11 66 66 52 3 4 2 2 3 1 1 1))))
-
-;; }}}
+(display "--- 2 (c) ---\n")
+(show-stream (remove-duplicates (list-to-stream '(2 1 3 115 3 1 1))))
+(show-stream (remove-duplicates (list-to-stream '(1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                  1 1 1 1 1 1 1 1 1 1 1 1 1))))
+(show-stream (remove-duplicates nats))
